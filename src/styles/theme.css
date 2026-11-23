@@ -1,0 +1,9 @@
+@theme {
+  --font-sans: 'IBM Plex Sans Thai', 'Noto Sans Thai', sans-serif;
+  --color-ink: #16181d;
+  --color-muted: #4a525d;
+  --color-line: #e3e6ea;
+  --color-ground: #f4f5f7;
+  --color-accent: #8e2f1c;
+  --color-focus: #1f5fbf;
+}

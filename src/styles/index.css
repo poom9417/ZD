@@ -1,0 +1,9 @@
+/* จุดเดียวที่ main.tsx import — ลำดับ: tailwind → tokens → base → คอมโพเนนต์ */
+@import "tailwindcss";
+@import "./theme.css";
+@import "./base.css";
+
+@import "./components/navbar.css";
+@import "./components/button.css";
+@import "./components/pivot-table.css";
+@import "./components/dashboard.css";
