@@ -5,7 +5,7 @@ export default function YearBars({ years, oldAmt, oldUpTo }: { years: { fy: numb
   return (
     <section className="card">
       <h2>ค้างเกิน 90 วัน แยกตามปีงบประมาณ</h2>
-      <p className="sub">ล้านบาท · ปีงบ {oldUpTo} และก่อนหน้า รวม {fmtMillion(oldAmt)} ล้าน</p>
+      <p className="sub">{years.length ? <>ล้านบาท · ปีงบ {oldUpTo} และก่อนหน้า รวม {fmtMillion(oldAmt)} ล้าน</> : 'ไม่มีรายการค้างเกิน 90 วัน'}</p>
       {years.map((y) => (
         <div className="row row-y" key={y.fy}>
           <div className="lb">ปีงบ {y.fy}</div>
@@ -16,3 +16,4 @@ export default function YearBars({ years, oldAmt, oldUpTo }: { years: { fy: numb
     </section>
   )
 }
+

@@ -7,13 +7,13 @@ import YearBars from '../components/YearBars'
 import TopOwnersTable from '../components/TopOwnersTable'
 import Notes from '../components/Notes'
 import { computeSummary } from '../lib/arSummary'
-import { zdData } from '../lib/zdData'
+import type { ZdData } from '../lib/types'
 
-export default function DashboardPage() {
-  const s = useMemo(() => computeSummary(zdData), [])
+export default function DashboardPage({ data }: { data: ZdData }) {
+  const s = useMemo(() => computeSummary(data), [data])
   return (
     <>
-      <PageHeader title="Dashboard อายุลูกหนี้ ZD" />
+      <PageHeader meta={data.meta} title="Dashboard อายุลูกหนี้ ZD" />
       <StatCards s={s} />
       <div className="mt"><AgingBar totals={s.bandTotals} total={s.total} /></div>
       <div className="grid-2 mt">
@@ -28,3 +28,4 @@ export default function DashboardPage() {
     </>
   )
 }
+

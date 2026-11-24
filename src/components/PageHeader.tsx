@@ -1,8 +1,7 @@
-import { zdData } from '../lib/zdData'
+import type { ZdMeta } from '../lib/types'
 import { fmtInt } from '../lib/format'
 
-export default function PageHeader({ title, hint }: { title: string; hint?: string }) {
-  const { meta } = zdData
+export default function PageHeader({ title, hint, meta }: { title: string; hint?: string; meta: ZdMeta }) {
   return (
     <header className="page-header">
       <h1>{title}</h1>
@@ -12,3 +11,4 @@ export default function PageHeader({ title, hint }: { title: string; hint?: stri
     </header>
   )
 }
+
