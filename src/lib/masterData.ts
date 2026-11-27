@@ -1,6 +1,5 @@
-import * as XLSX from 'xlsx'
-
 type Cell = string | number | boolean | Date | null | undefined
+export type MasterCell = Cell
 
 /** หนึ่งแถวของตาราง public.master_debtor (ZDAging) */
 export interface MasterRow {
@@ -30,8 +29,6 @@ export interface MasterImport {
   sourceRows: number
   warnings: string[]
 }
-
-export const MASTER_SHEET = 'master'
 
 /** ชื่อหัวคอลัมน์ในชีต master → ฟิลด์ใน master_debtor */
 const HEADERS = {
@@ -66,13 +63,8 @@ const int = (v: Cell, row: number, col: string): number | null => {
   return n
 }
 
-export const hasMasterSheet = (book: XLSX.WorkBook) => book.SheetNames.some((n) => n.trim().toLowerCase() === MASTER_SHEET)
-
-/** อ่านชีต master — ตัดแถวซ้ำที่ (gl_key, visit_type) โดยเก็บแถวหลังสุด และแจ้งเตือนเมื่อแถวซ้ำมีค่าต่างกัน */
-export function importMaster(book: XLSX.WorkBook): MasterImport {
-  const name = book.SheetNames.find((n) => n.trim().toLowerCase() === MASTER_SHEET)
-  if (!name) throw new Error('ไม่พบชีต master ในไฟล์นี้')
-  const matrix = XLSX.utils.sheet_to_json<Cell[]>(book.Sheets[name], { header: 1, defval: '', blankrows: true })
+/** แปลงตารางชีต master (แถว × คอลัมน์) เป็นแถวสำหรับ master_debtor — ตัดแถวซ้ำที่ (gl_key, visit_type) โดยเก็บแถวหลังสุด และแจ้งเตือนเมื่อแถวซ้ำมีค่าต่างกัน */
+export function importMaster(matrix: Cell[][]): MasterImport {
   const need = Object.values(HEADERS)
   const headerIndex = matrix.findIndex((r) => need.every((c) => r.map(text).includes(c)))
   if (headerIndex < 0) throw new Error(`ชีต master ไม่มีหัวคอลัมน์ที่จำเป็น: ${need.filter((c) => !matrix.some((r) => r.map(text).includes(c))).join(', ') || need.join(', ')}`)

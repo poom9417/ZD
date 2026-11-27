@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import type { WorkBook } from 'xlsx'
-import { importMaster } from '../lib/masterData'
+import { importMaster, type MasterCell } from '../lib/masterData'
 import { currentRole, dbConfigured, saveMaster, signIn, signOut } from '../lib/supabase'
 import { fmtInt } from '../lib/format'
 
@@ -8,11 +7,11 @@ type Auth = { state: 'loading' } | { state: 'out' } | { state: 'in'; role: strin
 const WRITERS = ['dev', 'admin']
 const msg = (e: unknown, fallback: string) => (e instanceof Error ? e.message : fallback)
 
-/** ชีต master ในไฟล์ที่อัปโหลด → บันทึกลง Supabase (public.master_debtor) ต้องล็อกอินเป็น dev/admin */
-export default function MasterSave({ book }: { book: WorkBook }) {
+/** master ที่เพิ่งอัปโหลด → บันทึกลง Supabase (public.master_debtor) ต้องล็อกอินเป็น dev/admin */
+export default function MasterSave({ matrix }: { matrix: MasterCell[][] }) {
   const parsed = useMemo(() => {
-    try { return { ok: importMaster(book) } } catch (e) { return { error: msg(e, 'อ่านชีต master ไม่ได้') } }
-  }, [book])
+    try { return { ok: importMaster(matrix) } } catch (e) { return { error: msg(e, 'อ่านชีต master ไม่ได้') } }
+  }, [matrix])
   const [auth, setAuth] = useState<Auth>({ state: 'loading' })
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -51,7 +50,7 @@ export default function MasterSave({ book }: { book: WorkBook }) {
   const canWrite = auth.state === 'in' && auth.active && auth.role !== null && WRITERS.includes(auth.role)
   return (
     <div className="upload-preview master-save" aria-busy={busy}>
-      <strong>ชีต master (ข้อมูลหน่วยงานลูกหนี้)</strong>
+      <strong>บันทึก master ลงฐานข้อมูล (Supabase)</strong>
       {!parsed.ok ? <p className="upload-error" role="alert">{parsed.error}</p> : <>
         <p>{fmtInt(parsed.ok.sourceRows)} แถวในไฟล์ · {fmtInt(parsed.ok.rows.length)} รายการไม่ซ้ำ (GL&Cus.&sp.gl + OPD/IPD)</p>
         {parsed.ok.warnings.length > 0 && <ul>{parsed.ok.warnings.map((w) => <li key={w}>{w}</li>)}</ul>}
