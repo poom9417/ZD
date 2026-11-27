@@ -2,6 +2,8 @@ import { useRef, useState } from 'react'
 import type { WorkBook } from 'xlsx'
 import { importSheet, readUpload, type ImportResult } from '../lib/importData'
 import { fmtBaht, fmtInt } from '../lib/format'
+import { hasMasterSheet } from '../lib/masterData'
+import MasterSave from './MasterSave'
 
 export default function UploadPanel({ onApply, onClose }: { onApply: (result: ImportResult) => void; onClose: () => void }) {
   const [book, setBook] = useState<WorkBook | null>(null)
@@ -42,6 +44,7 @@ export default function UploadPanel({ onApply, onClose }: { onApply: (result: Im
         {book && <><label className="field">ชีตข้อมูล<select value={sheet} onChange={e => { setSheet(e.target.value); rebuild(book, e.target.value, filename, date) }}>{book.SheetNames.map(n => <option key={n}>{n}</option>)}</select></label>
         <label className="field">วันที่รายงาน (เว้นว่างเพื่ออ่านจากไฟล์)<input type="date" value={date} onChange={e => { setDate(e.target.value); rebuild(book, sheet, filename, e.target.value) }} /></label></>}
       </div>
+      {book && hasMasterSheet(book) && <MasterSave key={filename} book={book} />}
       {busy && <p role="status">กำลังอ่านและตรวจสอบไฟล์…</p>}
       {error && <p className="upload-error" role="alert">{error}</p>}
       {preview && <div className="upload-preview" role="status"><strong>{preview.data.meta.source}</strong><p>{fmtInt(preview.data.meta.rows)} รายการ · ยอดรวม {fmtBaht(preview.data.meta.total) ?? '0.00'} บาท · ข้อมูล ณ {preview.data.meta.asOf}</p>
