@@ -2,7 +2,10 @@ import { useEffect, useRef, useState } from 'react'
 import type { WorkBook } from 'xlsx'
 import { importSheet, readUpload, type ImportResult } from '../lib/importData'
 import { guessReportDate, type MapResult, type MasterData } from '../lib/mapRaw'
-import { clearMaster, loadMaster, readMasterFile, saveMaster } from '../lib/masterStore'
+import { clearMaster, loadMaster, readMasterMatrix, saveMaster } from '../lib/masterStore'
+import { parseMaster } from '../lib/mapRaw'
+import type { MasterCell } from '../lib/masterData'
+import MasterSave from './MasterSave'
 import { findRawSheet, mapSheet } from '../lib/rawUpload'
 import { fmtBaht, fmtInt } from '../lib/format'
 
@@ -17,6 +20,7 @@ export default function UploadPanel({ onApply, onClose }: { onApply: (result: Im
   const [migYm, setMigYm] = useState(DEFAULT_MIGRATION_YM)
   const [master, setMaster] = useState<MasterData | null>(null)
   const [masterNote, setMasterNote] = useState('')
+  const [masterMatrix, setMasterMatrix] = useState<MasterCell[][] | null>(null) // master ที่เพิ่งอัปโหลด → ใช้บันทึกลงฐานข้อมูล
   const [preview, setPreview] = useState<(ImportResult & Partial<Pick<MapResult, 'unmatched'>>) | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -56,15 +60,16 @@ export default function UploadPanel({ onApply, onClose }: { onApply: (result: Im
     if (!file) return
     setBusy(true); setError(''); setMasterNote('')
     try {
-      const m = await readMasterFile(file)
+      const { matrix, label } = await readMasterMatrix(file)
+      const m = parseMaster(matrix, label)
       const saved = await saveMaster(m)
-      setMaster(m)
+      setMaster(m); setMasterMatrix(matrix)
       setMasterNote(saved ? 'บันทึก master ไว้ในเบราว์เซอร์นี้แล้ว ไม่ต้องอัปโหลดซ้ำ' : 'ใช้ master นี้ได้ในหน้านี้ แต่บันทึกในเบราว์เซอร์ไม่ได้ (อาจเปิดโหมดส่วนตัวอยู่)')
       if (book && isRaw) rebuild(book, sheet, filename, date, true, migYm, m)
     } catch (e) { setError(e instanceof Error ? e.message : 'อ่าน master ไม่สำเร็จ') }
     finally { setBusy(false) }
   }
-  const removeMaster = async () => { await clearMaster(); setMaster(null); setMasterNote(''); setPreview(null) }
+  const removeMaster = async () => { await clearMaster(); setMaster(null); setMasterMatrix(null); setMasterNote(''); setPreview(null) }
 
   return (
     <section id="upload-panel" className="upload-panel" aria-labelledby="upload-title" aria-busy={busy}>
@@ -84,6 +89,7 @@ export default function UploadPanel({ onApply, onClose }: { onApply: (result: Im
         {book && <label className="field">{isRaw ? 'วันที่รายงาน (วันที่ดึงข้อมูลจาก SAP)' : 'วันที่รายงาน (เว้นว่างเพื่ออ่านจากไฟล์)'}<input type="date" value={date} onChange={e => { setDate(e.target.value); rebuild(book, sheet, filename, e.target.value, isRaw, migYm, master) }} /></label>}
         {book && isRaw && <label className="field">รายการยกยอด Year/Month (ใช้ Net Due Date แทน Posting Date · เว้นว่างเพื่อปิด)<input type="text" value={migYm} placeholder="เช่น 2022/08" onChange={e => { setMigYm(e.target.value); rebuild(book, sheet, filename, date, true, e.target.value, master) }} /></label>}
       </div>
+      {masterMatrix && <MasterSave key={master?.savedAt} matrix={masterMatrix} />}
       {isRaw && <p className="upload-help">ตรวจพบไฟล์ดิบจาก SAP — ระบบจะจัดสิทธิ กลุ่มลูกหนี้ และช่วงอายุจาก master ให้อัตโนมัติ</p>}
       {!isRaw && <p className="upload-help">ไฟล์ที่วิเคราะห์แล้วต้องมีคอลัมน์ สิทธิ, กลุ่มลูกหนี้, Name, ช่วงอายุลูกหนี้-, FiscalYear และ Amt in loc.cur.</p>}
       {busy && <p role="status">กำลังอ่านและตรวจสอบไฟล์…</p>}

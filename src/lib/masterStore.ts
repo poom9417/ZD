@@ -38,7 +38,14 @@ export async function clearMaster(): Promise<void> {
 }
 
 /** อ่านไฟล์ master (.xlsx/.xls/.csv) — ถ้าเป็นไฟล์ analyzed จะหาชีตที่มีหัวคอลัมน์ master ให้เอง */
+type MasterCell = string | number | boolean | Date | null | undefined
 export async function readMasterFile(file: File): Promise<MasterData> {
+  const { matrix, label } = await readMasterMatrix(file)
+  return parseMaster(matrix, label)
+}
+
+/** อ่านไฟล์ master เป็นตาราง (แถว × คอลัมน์) พร้อมชื่อที่ใช้แสดง — ใช้ทั้งสร้าง MasterData และบันทึกลงฐานข้อมูล */
+export async function readMasterMatrix(file: File): Promise<{ matrix: MasterCell[][]; label: string }> {
   if (file.size > 25 * 1024 * 1024) throw new Error('กรุณาเลือกไฟล์ขนาดไม่เกิน 25 MB')
   const ext = file.name.split('.').pop()?.toLowerCase()
   if (!['xlsx', 'xls', 'csv'].includes(ext ?? '')) throw new Error('master รองรับเฉพาะ .xlsx, .xls และ .csv')
@@ -47,14 +54,14 @@ export async function readMasterFile(file: File): Promise<MasterData> {
     XLSX.utils.sheet_to_json<(string | number | boolean | Date | null | undefined)[]>(book.Sheets[name], { header: 1, defval: '', blankrows: true })
   if (ext === 'csv') {
     const book = XLSX.read(new TextDecoder('utf-8').decode(bytes), { type: 'string', raw: true })
-    return parseMaster(toMatrix(book, book.SheetNames[0]), file.name)
+    return { matrix: toMatrix(book, book.SheetNames[0]), label: file.name }
   }
   const names = XLSX.read(bytes, { type: 'array', bookSheets: true }).SheetNames
   const ordered = [...names.filter(n => n.toLowerCase() === 'master'), ...names.filter(n => n.toLowerCase() !== 'master')]
   for (const name of ordered) {
     const book = XLSX.read(bytes, { type: 'array', sheets: [name] }) // อ่านเฉพาะชีตนี้ ไม่โหลดชีตข้อมูลหลักแสนแถว
     const matrix = toMatrix(book, name)
-    if (isMasterMatrix(matrix)) return parseMaster(matrix, `${file.name} · ชีต ${name}`)
+    if (isMasterMatrix(matrix)) return { matrix, label: `${file.name} · ชีต ${name}` }
   }
   throw new Error('ไม่พบชีต master (ต้องมีคอลัมน์ ประเภทลูกหนี้สิทธิ, กลุ่มลูกหนี้สิทธิ, รหัสลูกหนี้, GLAccount, SpGLInd, ชื่อหน่วยงาน, Due)')
 }
